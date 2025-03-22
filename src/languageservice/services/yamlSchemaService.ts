@@ -27,7 +27,8 @@ import { getSchemaFromModeline } from './modelineUtil';
 import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
-import Ajv, { DefinedError } from 'ajv';
+import AjvCore from 'ajv/dist/core';
+import Ajv from 'ajv';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
 import Ajv04 from 'ajv-draft-04';
@@ -165,36 +166,29 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    let validationErrors: DefinedError[] = [];
+    let validator: AjvCore;
     switch (this.normalizeId(schema.$schema)) {
       case ajv04.defaultMeta(): {
-        if (!ajv04.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv04.errors as DefinedError[]);
-        }
+        validator = ajv04;
         break;
       }
       case ajv2019.defaultMeta(): {
-        if (!ajv2019.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv2019.errors as DefinedError[]);
-        }
+        validator = ajv2019;
         break;
       }
       case ajv2020.defaultMeta(): {
-        if (!ajv2020.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv2020.errors as DefinedError[]);
-        }
+        validator = ajv2020;
         break;
       }
       default:
-        if (!ajv.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv.errors as DefinedError[]);
-        }
+        validator = ajv;
         break;
     }
+    validator.validateSchema(schema);
 
-    if (validationErrors.length > 0) {
+    if (validator.errors?.length > 0) {
       const errs: string[] = [];
-      for (const err of validationErrors) {
+      for (const err of validator.errors) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
       resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
