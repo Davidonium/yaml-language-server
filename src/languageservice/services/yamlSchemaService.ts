@@ -33,12 +33,12 @@ import Ajv2020 from 'ajv/dist/2020';
 import Ajv04 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
+const localize = nls.loadMessageBundle();
+
 const ajv = new Ajv();
 const ajv04 = new Ajv04();
 const ajv2019 = new Ajv2019();
 const ajv2020 = new Ajv2020();
-
-const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -307,7 +307,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       const handleRef = (next: JSONSchema): void => {
         const seenRefs = new Set();
         while (next.$ref) {
-          const ref = next.$ref;
+          const ref = decodeURIComponent(next.$ref);
           const segments = ref.split('#', 2);
           //return back removed $ref. We lost info about referenced type without it.
           next._$ref = next.$ref;
